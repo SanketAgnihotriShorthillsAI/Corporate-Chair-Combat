@@ -59,7 +59,9 @@ def spawn_enemies(level, walls, is_training=False):
         while True:
             x = random.randint(50, SCREEN_WIDTH - 50)
             y = random.randint(50, SCREEN_HEIGHT - 50)
-            new_enemy = Chair(x, y, is_player=False)
+            enemy_type = random.choices(["basic", "sniper", "tank"], weights=[60, 20, 20], k=1)[0]
+            new_enemy = Chair(x, y, is_player=False, enemy_type=enemy_type)
+            # new_enemy = Chair(x, y, is_player=False)
             if not any(new_enemy.rect.colliderect(wall.rect) for wall in walls):
                 enemies.append(new_enemy)
                 break
@@ -183,6 +185,24 @@ def show_controls_tutorial():
             desc_text = tutorial_desc_font.render(desc, True, (50, 50, 50))
             screen.blit(name_text, (x_pos + 20, powerup_box_y + 60))
             screen.blit(desc_text, (x_pos + 20, powerup_box_y + 85))
+        # Enemy Types Section
+        enemy_box_y = 600
+        pygame.draw.rect(screen, (255, 255, 255), (50, enemy_box_y, SCREEN_WIDTH - 100, 150), border_radius=10)
+        pygame.draw.rect(screen, (100, 100, 100), (50, enemy_box_y, SCREEN_WIDTH - 100, 150), 2, border_radius=10)
+        enemy_title = tutorial_font.render("Enemy Types", True, (0, 0, 0))
+        screen.blit(enemy_title, (SCREEN_WIDTH // 2 - enemy_title.get_width() // 2, enemy_box_y + 10))
+        enemies = [
+            ("Basic", (200, 0, 0), "Standard enemy, chases you"),
+            ("Sniper", (0, 0, 200), "Stays back, shoots fast"),
+            ("Tank", (150, 75, 0), "Slow, takes 2 hits")
+        ]
+        for i, (name, color, desc) in enumerate(enemies):
+            x_pos = 100 + i * 350
+            pygame.draw.rect(screen, color, (x_pos, enemy_box_y + 70, 20, 15))  # Small chair-like shape
+            name_text = tutorial_desc_font.render(name, True, (0, 0, 0))
+            desc_text = tutorial_desc_font.render(desc, True, (50, 50, 50))
+            screen.blit(name_text, (x_pos + 30, enemy_box_y + 60))
+            screen.blit(desc_text, (x_pos + 30, enemy_box_y + 85))    
         button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 80, 200, 50)
         pygame.draw.rect(screen, (0, 255, 0), button_rect, border_radius=10)
         pygame.draw.rect(screen, (0, 100, 0), button_rect, 3, border_radius=10)

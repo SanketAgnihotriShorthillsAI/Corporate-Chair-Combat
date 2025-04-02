@@ -4,7 +4,7 @@ import random
 from projectile import Projectile
 
 class Chair:
-    def __init__(self, x, y, width=40, height=30, speed=5, is_player=True):
+    def __init__(self, x, y, width=40, height=30, speed=5, is_player=True, enemy_type="basic"):
         self.x = x
         self.y = y
         self.width = width
@@ -12,7 +12,23 @@ class Chair:
         self.base_speed = speed
         self.speed = speed
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
-        self.color = (0, 0, 0) if is_player else (200, 0, 0)
+        self.enemy_type = enemy_type
+        # Adjust stats based on enemy type
+        if is_player:
+            self.color = (0, 0, 0)  # Black for player
+        elif enemy_type == "sniper":
+            self.color = (0, 0, 200)  # Blue for sniper
+            self.base_shoot_delay = 15  # Faster shooting (0.25s vs 0.83s)
+            self.base_speed = 4  # Slightly slower
+        elif enemy_type == "tank":
+            self.color = (150, 75, 0)  # Brown for tank
+            self.width = 50
+            self.height = 40
+            self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+            self.base_speed = 3  # Slower movement
+            self.lives = 2  # Tougher
+        else:  # Basic enemy
+            self.color = (200, 0, 0)  # Red for basic
         self.angle = random.randint(0, 359) if not is_player else 0
         self.shoot_cooldown = 0
         self.base_shoot_cooldown = 30  # Default cooldown: 0.5s at 60 FPS
@@ -20,7 +36,12 @@ class Chair:
         self.shoot_delay = self.base_shoot_delay
         self.is_player = is_player
         self.alive = True
-        self.lives = 3 if is_player else 1
+        if is_player:
+            self.lives = 3
+        elif enemy_type == "tank":
+            self.lives = 2
+        else:
+            self.lives = 1
         self.bounce_offset = 0
         self.bounce_speed = 0.3
         self.hit_timer = 0
@@ -87,7 +108,8 @@ class Chair:
             dy = target.y - self.y
             distance = math.sqrt(dx**2 + dy**2)
 
-            if distance > 60: # Maintain some distance for strafing
+            min_distance = 200 if self.enemy_type == "sniper" else 60
+            if distance > min_distance: # Maintain some distance for strafing
                 target_angle = math.degrees(math.atan2(dy, dx))
                 angle_diff = (target_angle - self.angle + 180) % 360 - 180
                 self.angle += min(max(angle_diff, -10), 10)
@@ -193,10 +215,15 @@ class Chair:
         if self.alive:
             draw_y = self.rect.y + self.bounce_offset
             draw_color = (255, 255, 255) if self.hit_timer > 0 and self.hit_timer % 2 == 0 else self.color
-
-            seat_rect = pygame.Rect(self.rect.x + 5, draw_y + 10, self.width - 10, self.height - 20)
+            if self.enemy_type == "tank":
+                seat_rect = pygame.Rect(self.rect.x + 5, draw_y + 15, self.width - 10, self.height - 25)
+                backrest_rect = pygame.Rect(self.rect.x + 15, draw_y, self.width - 30, self.height - 15)
+            else:
+                seat_rect = pygame.Rect(self.rect.x + 5, draw_y + 10, self.width - 10, self.height - 20)
+                backrest_rect = pygame.Rect(self.rect.x + 15, draw_y, self.width - 30, self.height - 10)
+            # seat_rect = pygame.Rect(self.rect.x + 5, draw_y + 10, self.width - 10, self.height - 20)
             pygame.draw.rect(surface, draw_color, seat_rect)
-            backrest_rect = pygame.Rect(self.rect.x + 15, draw_y, self.width - 30, self.height - 10)
+            # backrest_rect = pygame.Rect(self.rect.x + 15, draw_y, self.width - 30, self.height - 10)
             pygame.draw.rect(surface, draw_color, backrest_rect)
             wheel1_pos = (self.rect.x + 10, draw_y + self.height - 5)
             wheel2_pos = (self.rect.x + self.width - 10, draw_y + self.height - 5)
