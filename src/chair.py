@@ -51,6 +51,7 @@ class Chair:
         self.spread_shot_timer = 0
         self.crash_timer = 0
         self.powerup_color = None
+        self.immunity_timer = 0  # Frames of immunity (set in main.py on level start)
         # Name tag for enemies
         self.name = None if is_player else random.choice(["Zed", "Rex", "Gus", "Max", "Leo", "Sam", "Jon"])
         self.font = pygame.font.SysFont(None, 20)
@@ -181,6 +182,9 @@ class Chair:
         if self.crash_timer > 0:
             self.crash_timer -= 1    
 
+        if self.immunity_timer > 0:
+            self.immunity_timer -= 1    
+
         if self.moving:
             self.bounce_offset = math.sin(pygame.time.get_ticks() * self.bounce_speed) * 2
         else:
@@ -209,7 +213,7 @@ class Chair:
         return None
 
     def take_damage(self):
-        if self.shield_timer <= 0:
+        if self.shield_timer <= 0 and self.immunity_timer <= 0:  # Only take damage if no shield or immunity
             self.lives -= 1
             self.hit_timer = 10
             if self.lives <= 0:
@@ -253,6 +257,10 @@ class Chair:
             pygame.draw.circle(surface, (100, 100, 100), (int(front_wheel_x), int(front_wheel_y)), 5)
             if self.shield_timer > 0:
                 pygame.draw.circle(surface, (0, 255, 255, 100), self.rect.center, self.width // 2, 2)
+            if self.immunity_timer > 0:
+                # Pulsing cyan glow effect
+                pulse = math.sin(pygame.time.get_ticks() * 0.01) * 5 + 25  # Pulse between 20-30 radius
+                pygame.draw.circle(surface, (0, 255, 255, 100), self.rect.center, int(pulse), 2)
             # Draw name tag for enemies
             if self.name:
                 name_text = self.font.render(self.name, True, (255, 255, 255))

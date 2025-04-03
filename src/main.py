@@ -70,8 +70,11 @@ def spawn_enemies(level, walls, is_training=False):
 
 def reset_game(walls, player_name, training_mode=False):
     global player, enemies, boss, projectiles, powerups, paper_jams, conference_tables, game_over, player_won, score, level, coffee_spill_timer, paper_jam_timer, table_timer, training_prompt_timer, tutorial_timer, tutorial_text
+    walls[:] = create_arena(SCREEN_WIDTH, SCREEN_HEIGHT)  # Reset walls to base arena
     player = Chair(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, is_player=True)
     player.name = player_name
+    if not training_mode:  # Only apply immunity in real levels
+        player.immunity_timer = 180  # 3 seconds at 60 FPS
     enemies = spawn_enemies(level, walls, is_training=training_mode)
     boss = BossChair(400, 300, is_level_5=(level == 5), is_level_4=(level == 4)) if level in [4, 5] and not training_mode else None
     projectiles = []
@@ -434,10 +437,12 @@ while running:
             training_mode = False
             level = 1
             reset_game(walls, player_name, training_mode=False)
+            player.immunity_timer = 180  # Immunity when entering Level 1 from training
             if levelup_sound:
                 levelup_sound.play()
         elif win_condition and level < 5 and not training_mode:
             level += 1
+            player.immunity_timer = 180  # 3 seconds immunity on level start
             enemies = spawn_enemies(level, walls)
             boss = BossChair(400, 300, is_level_5=(level == 5), is_level_4=(level == 4)) if level in [4, 5] else None
             paper_jams.clear()
