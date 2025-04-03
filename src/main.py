@@ -13,6 +13,7 @@ pygame.init()
 
 SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 900
+high_score = 0
 FPS = 60
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -173,10 +174,10 @@ def show_controls_tutorial():
         powerup_title = tutorial_font.render("Power-Ups", True, (0, 0, 0))
         screen.blit(powerup_title, (SCREEN_WIDTH // 2 - powerup_title.get_width() // 2, powerup_box_y + 10))
         powerups = [
-            ("Speed", GREEN, "Doubles your speed"),
-            ("Shield", BLUE, "Blocks one hit"),
-            ("Rapid", RED, "Faster shooting"),
-            ("Crash", PURPLE, "Kill enemies on touch")
+            ("Speed", (255, 215, 0), "Doubles your speed"),
+            ("Shield", (0, 255, 255), "Blocks one hit"),
+            ("Spread", (0, 255, 0), "Shoots bullets in all directions"),
+            ("Crash", (128, 0, 128), "Kill enemies on touch")
         ]
         for i, (name, color, desc) in enumerate(powerups):
             x_pos = 100 + i * 250
@@ -275,9 +276,13 @@ while running:
             move_sound_playing = False
 
         if keys[pygame.K_SPACE]:
-            new_projectile = player.shoot()
-            if new_projectile:
-                projectiles.append(new_projectile)
+            new_projectiles = player.shoot()
+            print(f"Shot: {new_projectiles}")  # Debug
+            if new_projectiles:
+                if isinstance(new_projectiles, list):
+                    projectiles.extend(new_projectiles)
+                else:
+                    projectiles.append(new_projectiles)
                 if shoot_sound:
                     shoot_sound.play()
 
@@ -379,7 +384,7 @@ while running:
 
         powerup_spawn_timer -= 1
         if powerup_spawn_timer <= 0 and random.random() < 0.01:
-            powerup_types = ["speed", "shield", "rapid", "crash"]
+            powerup_types = ["speed", "shield", "spread", "crash"]
             x = random.randint(50, SCREEN_WIDTH - 50)
             y = random.randint(50, SCREEN_HEIGHT - 50)
             powerup = PowerUp(x, y, random.choice(powerup_types))
@@ -468,6 +473,10 @@ while running:
             if win_sound:
                 win_sound.play()
 
+        # Update high score
+        if score > high_score:
+            high_score = score        
+
     draw_floor(screen)
     for wall in walls:
         wall.draw(screen)
@@ -500,6 +509,26 @@ while running:
     screen.blit(lives_text, (10, 40))
     screen.blit(level_text, (10, 70))
     screen.blit(player_name_text, (10, 100))
+
+    high_score_text = small_font.render(f"High Score: {high_score}", True, (255, 0, 0))
+    screen.blit(high_score_text, (10, 130))
+
+    # Display power-up timer
+    active_timer = None
+    if player.speed_boost_timer > 0:
+        active_timer = ("Speed", player.speed_boost_timer, player.powerup_color)
+    elif player.shield_timer > 0:
+        active_timer = ("Shield", player.shield_timer, player.powerup_color)
+    elif player.spread_shot_timer > 0:
+        active_timer = ("Spread", player.spread_shot_timer, player.powerup_color)
+    elif player.crash_timer > 0:
+        active_timer = ("Crash", player.crash_timer, player.powerup_color)
+
+    if active_timer:
+        name, frames, color = active_timer
+        seconds = frames // 60  # Convert frames to seconds
+        timer_text = small_font.render(f"{name}: {seconds}s", True, color)
+        screen.blit(timer_text, (1000, 130))
 
     if training_mode and training_prompt_timer > 0:
         prompt_text = font.render("Training Level - Defeat 2 Enemies", True, WHITE)

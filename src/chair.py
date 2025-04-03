@@ -48,8 +48,9 @@ class Chair:
         self.moving = False
         self.speed_boost_timer = 0
         self.shield_timer = 0
-        self.rapid_fire_timer = 0
+        self.spread_shot_timer = 0
         self.crash_timer = 0
+        self.powerup_color = None
         # Name tag for enemies
         self.name = None if is_player else random.choice(["Zed", "Rex", "Gus", "Max", "Leo", "Sam", "Jon"])
         self.font = pygame.font.SysFont(None, 20)
@@ -174,8 +175,8 @@ class Chair:
         if self.shield_timer > 0:
             self.shield_timer -= 1
 
-        if self.rapid_fire_timer > 0:
-            self.rapid_fire_timer -= 1
+        if self.spread_shot_timer > 0:
+            self.spread_shot_timer -= 1
 
         if self.crash_timer > 0:
             self.crash_timer -= 1    
@@ -186,12 +187,25 @@ class Chair:
             self.bounce_offset *= 0.9
 
     def shoot(self):
-        if self.shoot_cooldown <= 0:  # Changed to <= 0 for reliability
-            dx = -math.sin(math.radians(self.angle))
-            dy = -math.cos(math.radians(self.angle))
-            projectile = Projectile(self.rect.centerx - 5, self.rect.centery - 2.5, (dx, dy), shooter=self)
-            self.shoot_cooldown = self.base_shoot_cooldown if self.rapid_fire_timer <= 0 else self.base_shoot_cooldown // 2  # 0.5s or 0.25s with rapid
-            return projectile
+        if self.shoot_cooldown <= 0:
+            projectiles = []
+            if self.spread_shot_timer > 0:
+                # Fire bullets in all directions (360°, every 45°)
+                for angle in range(0, 360, 45):  # 8 bullets: 0°, 45°, 90°, etc.
+                    dx = -math.sin(math.radians(angle))
+                    dy = -math.cos(math.radians(angle))
+                    projectile = Projectile(self.rect.centerx - 5, self.rect.centery - 2.5, (dx, dy), shooter=self)
+                    projectiles.append(projectile)
+                self.shoot_cooldown = self.base_shoot_cooldown
+                return projectiles  # Return list for radial spread
+            else:
+                # Single bullet
+                dx = -math.sin(math.radians(self.angle))
+                dy = -math.cos(math.radians(self.angle))
+                projectile = Projectile(self.rect.centerx - 5, self.rect.centery - 2.5, (dx, dy), shooter=self)
+                projectiles.append(projectile)
+                self.shoot_cooldown = self.base_shoot_cooldown
+                return projectiles[0]  # Single projectile for normal shot
         return None
 
     def take_damage(self):
@@ -204,12 +218,17 @@ class Chair:
     def apply_powerup(self, powerup_type):
         if powerup_type == "speed":
             self.speed_boost_timer = 300
+            self.powerup_color = (255, 215, 0)  # Gold
         elif powerup_type == "shield":
             self.shield_timer = 300
-        elif powerup_type == "rapid":
-            self.rapid_fire_timer = 300
+            self.powerup_color = (0, 255, 255)  # Cyan
+        elif powerup_type == "spread":
+            self.spread_shot_timer = 600
+            self.powerup_color = (0, 255, 0)  # Green
+            print(f"Applied Spread Power-Up: spread_shot_timer = {self.spread_shot_timer}")
         elif powerup_type == "crash":
-            self.crash_timer = 300  
+            self.crash_timer = 600  # 10 seconds at 60 FPS
+            self.powerup_color = (128, 0, 128)  # Purple 
 
     def draw(self, surface):
         if self.alive:
