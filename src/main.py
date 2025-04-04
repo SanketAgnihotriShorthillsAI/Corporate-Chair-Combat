@@ -411,11 +411,18 @@ while running:
                 for enemy in enemies[:]:
                     if projectile.rect.colliderect(enemy.rect) and enemy.alive:
                         enemy.take_damage()
-                        score += 10
+                        if enemy.enemy_type == "sniper":
+                            score += 15  # Sniper hit: +15
+                        elif enemy.enemy_type == "tank":
+                            score += 20  # Tank hit: +20
+                        else:  # "basic"
+                            score += 10  # Normal hit: +10
                         projectile.active = False
                 if boss and projectile.rect.colliderect(boss.rect) and boss.alive:
                     boss.take_damage()
-                    score += 20
+                    score += 20  # +20 per hit
+                    if not boss.alive:  # Check if boss just died
+                        score += 50  # +50 bonus for killing boss
                     projectile.active = False
             elif projectile.shooter and not projectile.shooter.is_player:
                 if projectile.rect.colliderect(player.rect) and player.alive:
@@ -447,7 +454,7 @@ while running:
             boss = BossChair(400, 300, is_level_5=(level == 5), is_level_4=(level == 4)) if level in [4, 5] else None
             paper_jams.clear()
             conference_tables.clear()
-            score += 50
+            score += 30
             powerups.clear()
             if level == 2:
                 tutorial_timer = 150  # 2.5 seconds
